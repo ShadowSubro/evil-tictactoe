@@ -133,6 +133,7 @@ function showPopup(message) {
 }
 
 playAgainBtn.addEventListener('click', resetGame);
+const closePopupBtn = document.getElementById('close-popup');
 closePopupBtn.addEventListener('click', () => {
   popup.classList.add('hidden');
   resetGame();
