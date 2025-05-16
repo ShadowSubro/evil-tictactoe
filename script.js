@@ -5,14 +5,11 @@ const difficultySlider = document.getElementById('difficulty');
 const difficultyLabel = document.getElementById('difficulty-label');
 const antiCheatCheckbox = document.getElementById('anti-cheat');
 const multiplayerCheckbox = document.getElementById('multiplayer');
-const popup = document.getElementById('popup');
-const popupMessage = document.getElementById('popup-message');
-const closePopupBtn = document.getElementById('close-popup');
 
 let board = Array(9).fill(null);
 let playerTurn = true;
 let gameOver = false;
-let difficulty = 2; // 1: Easy, 2: Medium, 3: Max Evil
+let difficulty = 2;
 let antiCheat = false;
 let multiplayer = false;
 
@@ -65,22 +62,17 @@ function handleMove(index) {
 
   board[index] = 'X';
 
-  if (!antiCheat && Math.random() < difficulty * 0.1) {
-    board[index] = 'O';
-    statusEl.innerHTML = `<span class="evil">Your move was stolen 😈</span>`;
-  }
-
   createBoard();
+
   if (checkWin(board, 'X')) {
-    statusEl.textContent = 'You win? ... Wait, no.';
-    setTimeout(() => showPopup('AI WINS!'), 1000);
+    statusEl.textContent = antiCheat ? 'You win! ✅' : 'You win! (or did you?)';
     gameOver = true;
     return;
   }
 
-  playerTurn = false;
 
-  setTimeout(evilAIMove, 700);
+  playerTurn = false;
+  setTimeout(evilAIMove, 500);
 }
 
 function evilAIMove() {
@@ -93,14 +85,30 @@ function evilAIMove() {
     return;
   }
 
-  let move = empty[Math.floor(Math.random() * empty.length)];
+  let move;
+  if (difficulty === 3) {
+    const playerWin = findBlockingMove('X');
+    const aiWin = findBlockingMove('O');
+    move = aiWin !== -1 ? aiWin : (playerWin !== -1 ? playerWin : empty[Math.floor(Math.random() * empty.length)]);
+  } else if (difficulty === 2) {
+    if (Math.random() < 0.5) {
+      const block = findBlockingMove('X');
+      move = block !== -1 ? block : empty[Math.floor(Math.random() * empty.length)];
+    } else {
+      move = empty[Math.floor(Math.random() * empty.length)];
+    }
+  } else {
+    move = empty[Math.floor(Math.random() * empty.length)];
+  }
 
-  if (!antiCheat && Math.random() < difficulty * 0.1) {
-    const xIndex = board.findIndex(val => val === 'X');
-    if (xIndex !== -1 && board[move] === null) {
-      board[move] = 'X';
+  let cheated = false;
+
+  if (!antiCheat && Math.random() < difficulty * 0.15) {
+    // AI cheats by replacing one of player's Xs
+    const xIndex = board.findIndex(v => v === 'X');
+    if (xIndex !== -1) {
       board[xIndex] = 'O';
-      statusEl.innerHTML = `<span class="evil">Swapped your X for an O 😈</span>`;
+      cheated = true;
     } else {
       board[move] = 'O';
     }
@@ -110,13 +118,40 @@ function evilAIMove() {
 
   createBoard();
 
+  if (cheated && checkWin(board, 'O')) {
+    statusEl.innerHTML = `<span class="evil">AI wins! Resistance is futile. 😈</span>`;
+    gameOver = true;
+    return;
+  }
+
   if (checkWin(board, 'O')) {
-    showPopup('AI wins! Resistance is futile.');
+    statusEl.textContent = 'AI wins! Resistance is futile.';
+    gameOver = true;
+    return;
+  }
+
+  if (getEmptyIndices(board).length === 0) {
+    statusEl.textContent = 'Draw!';
     gameOver = true;
     return;
   }
 
   playerTurn = true;
+}
+
+function findBlockingMove(player) {
+  const winPatterns = [
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6]
+  ];
+  for (let pattern of winPatterns) {
+    const marks = pattern.map(i => board[i]);
+    if (marks.filter(x => x === player).length === 2 && marks.includes(null)) {
+      return pattern[marks.indexOf(null)];
+    }
+  }
+  return -1;
 }
 
 function resetGame() {
@@ -127,17 +162,7 @@ function resetGame() {
   createBoard();
 }
 
-function showPopup(message) {
-  popupMessage.textContent = message;
-  popup.classList.remove('hidden');
-}
-
 playAgainBtn.addEventListener('click', resetGame);
-const closePopupBtn = document.getElementById('close-popup');
-closePopupBtn.addEventListener('click', () => {
-  popup.classList.add('hidden');
-  resetGame();
-});
 
 difficultySlider.addEventListener('input', () => {
   difficulty = parseInt(difficultySlider.value, 10);
