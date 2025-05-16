@@ -43,6 +43,11 @@ h1 {
   display: flex;
   justify-content: center;
   align-items: center;
+  transition: background 0.2s;
+}
+
+.cell:hover {
+  background-color: #333;
 }
 
 #status {
@@ -53,6 +58,7 @@ h1 {
 .evil {
   color: red;
   font-weight: bold;
+  animation: shake 0.3s ease-in-out;
 }
 
 #play-again {
@@ -62,25 +68,10 @@ h1 {
   cursor: pointer;
 }
 
-#popup {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.8);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-#popup-content {
-  background-color: #222;
-  padding: 20px;
-  border: 2px solid #0f0;
-  color: #0f0;
-}
-
-.hidden {
-  display: none;
+@keyframes shake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  50% { transform: translateX(4px); }
+  75% { transform: translateX(-4px); }
+  100% { transform: translateX(0); }
 }
